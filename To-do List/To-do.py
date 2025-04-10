@@ -8,17 +8,19 @@ import os
 
 class TodoApp:
     def __init__(self, root):
+        """Initialize the main application window and setup basic configurations"""
         self.root = root
-        self.root.title("Test To-Do List")
-        self.root.geometry("800x600")
-        self.style = ttk.Style()
+        self.root.title("To-Do List")
+        self.root.geometry("800x600")  # Set initial window size
+        self.style = ttk.Style()  # Create style object for theming
 
+        # Define path for tasks storage file
         self.tasks_file = os.path.join(os.path.dirname(__file__), 'tasks.json')
-        self.is_first_run = not os.path.exists(self.tasks_file)
+        self.is_first_run = not os.path.exists(self.tasks_file)  # Check if this is first time running
 
-        # Themes
+        # Define color themes for the application
         self.themes = {
-            # Light Theme
+            # Light Theme - Modern and clean look
             'Light': {
                 'bg': '#F8FAFC',
                 'fg': '#334155',
@@ -50,7 +52,7 @@ class TodoApp:
                 'calendar_weekend_fg': '#64748B'
             },
 
-            # Dark Theme
+            # Dark Theme - Easy on eyes in low light
             'Dark': {
                 'bg': '#0F172A',
                 'fg': '#E2E8F0',
@@ -82,7 +84,7 @@ class TodoApp:
                 'calendar_weekend_fg': '#94A3B8'
             },
 
-            # Ocean Theme
+            # Ocean Theme - Calming blue-based palette
             'Ocean': {
                 'bg': '#F0F9FF',
                 'fg': '#0C4A6E',
@@ -115,60 +117,64 @@ class TodoApp:
             }
         }
 
-        # Initializing data structures
-        self.tasks = []
-        self.sort_column = 'deadline'
-        self.sort_order = True
-        self.current_theme = 'Light'
+        # Initialize core data structures and settings
+        self.tasks = []  # List to store all tasks
+        self.sort_column = 'deadline'  # Default sort column
+        self.sort_order = True  # True for ascending, False for descending
+        self.current_theme = 'Light'  # Default theme
         
-        # Style
+        # Configure the base style
         self.style.theme_use('clam')
         
-        # Create UI
+        # Build the user interface
         self.create_ui()
         
-        # Then configure styles
+        # Apply theme styles
         self.configure_styles()
         
-        # Create context menu after tree is created
+        # Setup right-click menu
         self.create_context_menu()
         
-        # Load tasks and update UI
+        # Load existing tasks and update display
         self.load_tasks()
         self.update_status()
 
-        # Bind keyboard shortcuts
-        self.root.bind('<Control-n>', lambda e: self.task_entry.focus())
-        self.root.bind('<Control-f>', lambda e: self.search_entry.focus())
-        self.root.bind('<Delete>', lambda e: self.remove_task())
-        self.root.bind('<Control-s>', lambda e: self.save_tasks())
+        # Setup keyboard shortcuts
+        self.root.bind('<Control-n>', lambda e: self.task_entry.focus())  # New task shortcut
+        self.root.bind('<Control-f>', lambda e: self.search_entry.focus())  # Search shortcut
+        self.root.bind('<Delete>', lambda e: self.remove_task())  # Delete task shortcut
+        self.root.bind('<Control-s>', lambda e: self.save_tasks())  # Save shortcut
 
     def _find_task_by_id(self, task_id):
+        """Helper method to find a task by its unique ID"""
         for task in self.tasks:
             if task.get('id') == task_id:
                 return task
         return None
 
     def create_context_menu(self):
+        """Create and configure the right-click context menu"""
         if not hasattr(self, 'tree'):
             return
             
+        # Create popup menu for right-click actions
         self.context_menu = tk.Menu(self.root, tearoff=0)
         self.context_menu.add_command(label="Mark as Complete/Incomplete", command=self.mark_complete)
         self.context_menu.add_command(label="Edit", command=self.edit_task)
         self.context_menu.add_command(label="Delete", command=self.remove_task)
-        self.tree.bind("<Button-3>", self.show_context_menu) # Right-click
+        self.tree.bind("<Button-3>", self.show_context_menu)  # Bind right-click event
 
     def show_context_menu(self, event):
-        item_id = self.tree.identify_row(event.y)
+        """Display the context menu at mouse position when right-clicking a task"""
+        item_id = self.tree.identify_row(event.y)  # Get clicked item
         if item_id:
-            self.tree.selection_set(item_id)
+            self.tree.selection_set(item_id)  # Select the clicked item
             task = self._find_task_by_id(item_id)
             if task:
-                self.context_menu.post(event.x_root, event.y_root)
-        # else: Do nothing if clicked outside an item
+                self.context_menu.post(event.x_root, event.y_root)  # Show menu at mouse position
 
     def mark_complete(self):
+        """Toggle the completion status of selected task(s)"""
         selected_items = self.tree.selection()
         if not selected_items:
             messagebox.showwarning("Warning", "No task selected!")
@@ -178,23 +184,27 @@ class TodoApp:
         for item_id in selected_items:
             task = self._find_task_by_id(item_id)
             if task:
-                task['completed'] = not task['completed']
+                task['completed'] = not task['completed']  # Toggle completion status
                 updated = True
 
         if updated:
-            self.save_tasks()
-            self.update_treeview()
-            self.update_status()
+            self.save_tasks()  # Save changes to file
+            self.update_treeview()  # Refresh display
+            self.update_status()  # Update status bar
 
     def add_task(self):
+        """Add a new task with the specified details"""
+        # Get input values
         task_text = self.task_entry.get().strip()
         deadline_str = self.cal.get_date().strftime("%d-%m-%Y")
         priority = self.priority_combo.get()
 
+        # Validate task text
         if not task_text:
             messagebox.showerror("Error", "Task description cannot be empty!")
             return
 
+        # Validate deadline date
         try:
             deadline_date = datetime.strptime(deadline_str, "%d-%m-%Y").date()
             if deadline_date < date.today():
@@ -204,6 +214,7 @@ class TodoApp:
             messagebox.showerror("Error", "Invalid date format selected!")
             return
 
+        # Create new task object with unique ID
         new_task = {
             'id': str(uuid.uuid4()),
             'task': task_text,
@@ -212,63 +223,163 @@ class TodoApp:
             'completed': False
         }
 
+        # Add task and update UI
         self.tasks.append(new_task)
         self.save_tasks()
         self.clear_inputs()
-        # self.sort_tasks(self.sort_column, self.sort_order) # Keeping current sort order
         self.update_treeview()
         self.update_status()
 
-        # Consider removing the success messagebox, it can be disruptive
-        # messagebox.showinfo("Success", "Task added successfully!")
-
     def configure_styles(self):
+        """Configure and apply the current theme styles to all widgets"""
         theme = self.themes[self.current_theme]
 
-        # Configure basic styles
+        # Configure basic widget styles
         self.style.configure('.', background=theme['bg'], foreground=theme['fg'], font=('Segoe UI', 10))
         self.style.configure('TFrame', background=theme['bg'])
         self.style.configure('TLabel', background=theme['bg'], foreground=theme['fg'], font=('Segoe UI', 10))
-        self.style.configure('TEntry', fieldbackground=theme['entry_bg'], foreground=theme['entry_fg'], insertcolor=theme['fg'], selectbackground=theme['entry_select_bg'], selectforeground=theme['entry_select_fg'], borderwidth=1, relief='solid', padding=8)
-        self.style.map('TEntry', bordercolor=[('focus', theme['button_bg']), ('!focus', theme['border_color'])])
+        
+        # Configure Entry widget styles with focus effects
+        self.style.configure('TEntry', 
+            fieldbackground=theme['entry_bg'], 
+            foreground=theme['entry_fg'], 
+            insertcolor=theme['fg'],  # Cursor color
+            selectbackground=theme['entry_select_bg'],  # Selection highlight
+            selectforeground=theme['entry_select_fg'], 
+            borderwidth=1, 
+            relief='solid', 
+            padding=8
+        )
+        self.style.map('TEntry', 
+            bordercolor=[('focus', theme['button_bg']), ('!focus', theme['border_color'])]
+        )
 
-        self.style.configure('TCombobox', fieldbackground=theme['entry_bg'], foreground=theme['entry_fg'], selectbackground=theme['entry_select_bg'], selectforeground=theme['entry_select_fg'], background=theme['entry_bg'], borderwidth=1, relief='solid', padding=8, arrowcolor=theme['fg'])
-        self.style.map('TCombobox', fieldbackground=[('readonly', theme['entry_bg'])], selectbackground=[('readonly', theme['entry_select_bg'])], selectforeground=[('readonly', theme['entry_select_fg'])], background=[('readonly', theme['entry_bg']), ('active', theme['hover_bg'])], foreground=[('readonly', theme['entry_fg'])], bordercolor=[('focus', theme['button_bg']), ('!focus', theme['border_color'])])
+        # Configure Combobox styles with states
+        self.style.configure('TCombobox', 
+            fieldbackground=theme['entry_bg'],
+            foreground=theme['entry_fg'],
+            selectbackground=theme['entry_select_bg'],
+            selectforeground=theme['entry_select_fg'],
+            background=theme['entry_bg'],
+            borderwidth=1,
+            relief='solid',
+            padding=8,
+            arrowcolor=theme['fg']
+        )
+        
+        # Map Combobox states (readonly, active, etc.)
+        self.style.map('TCombobox',
+            fieldbackground=[('readonly', theme['entry_bg'])],
+            selectbackground=[('readonly', theme['entry_select_bg'])],
+            selectforeground=[('readonly', theme['entry_select_fg'])],
+            background=[('readonly', theme['entry_bg']), ('active', theme['hover_bg'])],
+            foreground=[('readonly', theme['entry_fg'])],
+            bordercolor=[('focus', theme['button_bg']), ('!focus', theme['border_color'])]
+        )
 
-        # Configure priority styles
-        priority_colors = {'Low': '#10B981', 'Medium': '#F59E0B', 'High': '#EF4444'}
+        # Configure priority-specific styles with different colors
+        priority_colors = {
+            'Low': '#10B981',    # Green
+            'Medium': '#F59E0B',  # Orange
+            'High': '#EF4444'    # Red
+        }
+        
+        # Create styles for each priority level
         for priority, color in priority_colors.items():
             style_name = f'Priority.{priority}.TCombobox'
             try:
                 self.style.configure(style_name, foreground=color)
             except tk.TclError:
+                # Handle style creation for complex widgets
                 base_settings = self.style.layout('TCombobox')
                 element_options = self.style.element_options('TCombobox.field')
                 self.style.layout(style_name, base_settings)
                 self.style.configure(style_name, foreground=color, **element_options)
 
-        self.style.configure('Filter.TCombobox', font=('Segoe UI', 10), fieldbackground=theme['entry_bg'], foreground=theme['entry_fg'], padding=8, borderwidth=1, relief='solid', arrowcolor=theme['fg'])
-        self.style.map('Filter.TCombobox', bordercolor=[('focus', theme['button_bg']), ('!focus', theme['border_color'])])
+        # Configure filter combobox style
+        self.style.configure('Filter.TCombobox',
+            font=('Segoe UI', 10),
+            fieldbackground=theme['entry_bg'],
+            foreground=theme['entry_fg'],
+            padding=8,
+            borderwidth=1,
+            relief='solid',
+            arrowcolor=theme['fg']
+        )
+        self.style.map('Filter.TCombobox',
+            bordercolor=[('focus', theme['button_bg']), ('!focus', theme['border_color'])]
+        )
 
-        # Button styles
-        self.style.configure('TButton', font=('Segoe UI', 10, 'bold'), padding=(15, 8), background=theme['button_bg'], foreground=theme['button_fg'], borderwidth=0, relief='flat')
-        self.style.map('TButton', background=[('active', theme['active_bg']), ('pressed', theme['active_bg'])], foreground=[('active', theme['button_fg']), ('pressed', theme['button_fg'])])
+        # Configure button styles with hover effects
+        self.style.configure('TButton',
+            font=('Segoe UI', 10, 'bold'),
+            padding=(15, 8),
+            background=theme['button_bg'],
+            foreground=theme['button_fg'],
+            borderwidth=0,
+            relief='flat'
+        )
+        self.style.map('TButton',
+            background=[('active', theme['active_bg']), ('pressed', theme['active_bg'])],
+            foreground=[('active', theme['button_fg']), ('pressed', theme['button_fg'])]
+        )
 
-        # Header styles
+        # Configure header styles
         self.style.configure('Header.TFrame', background=theme['header_bg'])
-        self.style.configure('Header.TLabel', background=theme['header_bg'], foreground=theme['header_fg'], font=('Segoe UI', 16, 'bold'), padding=20)
+        self.style.configure('Header.TLabel',
+            background=theme['header_bg'],
+            foreground=theme['header_fg'],
+            font=('Segoe UI', 16, 'bold'),
+            padding=20
+        )
 
-        # Treeview styles
-        self.style.configure('Treeview', font=('Segoe UI', 10), rowheight=35, fieldbackground=theme['tree_bg'], background=theme['tree_bg'], foreground=theme['tree_fg'], borderwidth=1, relief='solid', bordercolor=theme['border_color'])
-        self.style.configure('Treeview.Heading', font=('Segoe UI', 10, 'bold'), background=theme['tree_heading_bg'], foreground=theme['tree_heading_fg'], relief='flat', borderwidth=0, padding=10)
-        self.style.map('Treeview', background=[('selected', theme['tree_selected_bg'])], foreground=[('selected', theme['tree_fg'])], bordercolor=[('focus', theme['button_bg']), ('!focus', theme['border_color'])])
+        # Configure Treeview styles for task list
+        self.style.configure('Treeview',
+            font=('Segoe UI', 10),
+            rowheight=35,
+            fieldbackground=theme['tree_bg'],
+            background=theme['tree_bg'],
+            foreground=theme['tree_fg'],
+            borderwidth=1,
+            relief='solid',
+            bordercolor=theme['border_color']
+        )
+        
+        # Configure Treeview header and selection styles
+        self.style.configure('Treeview.Heading',
+            font=('Segoe UI', 10, 'bold'),
+            background=theme['tree_heading_bg'],
+            foreground=theme['tree_heading_fg'],
+            relief='flat',
+            borderwidth=0,
+            padding=10
+        )
+        self.style.map('Treeview',
+            background=[('selected', theme['tree_selected_bg'])],
+            foreground=[('selected', theme['tree_fg'])],
+            bordercolor=[('focus', theme['button_bg']), ('!focus', theme['border_color'])]
+        )
 
-        # Checkbutton style
-        self.style.configure('TCheckbutton', background=theme['bg'], foreground=theme['fg'], padding=5, font=('Segoe UI', 10))
-        self.style.map('TCheckbutton', background=[('active', theme['hover_bg'])], foreground=[('active', theme['fg'])])
+        # Configure checkbox style
+        self.style.configure('TCheckbutton',
+            background=theme['bg'],
+            foreground=theme['fg'],
+            padding=5,
+            font=('Segoe UI', 10)
+        )
+        self.style.map('TCheckbutton',
+            background=[('active', theme['hover_bg'])],
+            foreground=[('active', theme['fg'])]
+        )
 
-        # Status Bar Style
-        self.style.configure('Status.TLabel', background=theme['status_bg'], foreground=theme['status_fg'], relief='flat', padding=10, font=('Segoe UI', 9))
+        # Configure status bar style
+        self.style.configure('Status.TLabel',
+            background=theme['status_bg'],
+            foreground=theme['status_fg'],
+            relief='flat',
+            padding=10,
+            font=('Segoe UI', 9)
+        )
 
         # Apply styles to existing widgets if they exist
         if hasattr(self, 'task_entry'):
@@ -331,81 +442,92 @@ class TodoApp:
                 print(f"Error applying styles: {e}")
 
     def create_ui(self):
-        # Main container
-        main_container = ttk.Frame(self.root, style='TFrame') # Apply base style
-        main_container.pack(fill=tk.BOTH, expand=True, padx=20, pady=15) # Reduced padding slightly
+        """Create and configure the main user interface components"""
+        # Main container with padding
+        main_container = ttk.Frame(self.root, style='TFrame')
+        main_container.pack(fill=tk.BOTH, expand=True, padx=20, pady=15)
 
-        # Header
+        # Header section with app title
         header_frame = ttk.Frame(main_container, style='Header.TFrame')
         header_frame.pack(fill=tk.X, pady=(0, 15))
-        ttk.Label(header_frame, text="To-Do List Manager", style='Header.TLabel').pack(pady=5) # Reduced padding
+        ttk.Label(header_frame, text="To-Do List Manager", style='Header.TLabel').pack(pady=5)
 
-        # Welcome message for first-time users
+        # First-time user welcome message
         if self.is_first_run:
             welcome_frame = ttk.Frame(main_container, style='TFrame')
             welcome_frame.pack(fill=tk.X, pady=(0, 10))
             welcome_text = ("Welcome! Add tasks below.\n"
-                            "Tips: Ctrl+N=New, Ctrl+F=Search, Del=Remove, "
-                            "Double-click=Edit, Right-click=Options")
-            ttk.Label(welcome_frame, text=welcome_text, justify=tk.CENTER, style='TLabel', font=('Segoe UI', 10)).pack(pady=3)
+                          "Tips: Ctrl+N=New, Ctrl+F=Search, Del=Remove, "
+                          "Double-click=Edit, Right-click=Options")
+            ttk.Label(welcome_frame, text=welcome_text, justify=tk.CENTER, 
+                     style='TLabel', font=('Segoe UI', 10)).pack(pady=3)
 
-        # Input section
+        # Task input section
         input_frame = ttk.Frame(main_container, style='TFrame')
         input_frame.pack(fill=tk.X, pady=(0, 15))
-        input_frame.columnconfigure(1, weight=1) # Task entry expands
+        input_frame.columnconfigure(1, weight=1)  # Make task entry expandable
 
-        ttk.Label(input_frame, text="Task:", style='TLabel', font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, padx=(0, 10), pady=5, sticky='w')
+        # Task description input
+        ttk.Label(input_frame, text="Task:", style='TLabel', 
+                 font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, padx=(0, 10), pady=5, sticky='w')
         self.task_entry = ttk.Entry(input_frame, width=60, style='TEntry')
         self.task_entry.grid(row=0, column=1, columnspan=3, padx=5, pady=5, sticky='ew')
-        self.task_entry.bind('<Return>', lambda event: self.add_task())
-        self.task_entry.bind('<Escape>', lambda event: self.clear_inputs())
+        
+        # Bind task entry events
+        self.task_entry.bind('<Return>', lambda event: self.add_task())  # Enter to add task
+        self.task_entry.bind('<Escape>', lambda event: self.clear_inputs())  # Escape to clear
         self.create_tooltip(self.task_entry, "Enter task, press Enter to add")
 
-        ttk.Label(input_frame, text="Deadline:", style='TLabel', font=('Segoe UI', 10, 'bold')).grid(row=1, column=0, padx=(0, 10), pady=5, sticky='w')
-        self.cal = DateEntry(input_frame, date_pattern='dd-mm-yyyy', width=15, style='TEntry') # Use TEntry style base
+        # Deadline input with calendar
+        ttk.Label(input_frame, text="Deadline:", style='TLabel', 
+                 font=('Segoe UI', 10, 'bold')).grid(row=1, column=0, padx=(0, 10), pady=5, sticky='w')
+        self.cal = DateEntry(input_frame, date_pattern='dd-mm-yyyy', width=15, style='TEntry')
         self.cal.grid(row=1, column=1, padx=5, pady=5, sticky='w')
-        self.cal.set_date(date.today())
+        self.cal.set_date(date.today())  # Set default to today
         self.create_tooltip(self.cal, "Select task deadline")
-        # Apply specific calendar styling after creation
-        self.configure_styles() # Call configure styles to apply calendar theme
 
-        ttk.Label(input_frame, text="Priority:", style='TLabel', font=('Segoe UI', 10, 'bold')).grid(row=1, column=2, padx=(20, 10), pady=5, sticky='w')
-        self.priority_combo = ttk.Combobox(input_frame, values=["Low", "Medium", "High"], width=15, state='readonly')
+        # Priority selection dropdown
+        ttk.Label(input_frame, text="Priority:", style='TLabel', 
+                 font=('Segoe UI', 10, 'bold')).grid(row=1, column=2, padx=(20, 10), pady=5, sticky='w')
+        self.priority_combo = ttk.Combobox(input_frame, values=["Low", "Medium", "High"], 
+                                         width=15, state='readonly')
         self.priority_combo.grid(row=1, column=3, padx=5, pady=5, sticky='w')
-        self.priority_combo.set("Medium")
-        # FIX: Apply the correct initial style based on the default value
-        self.update_priority_style()
+        self.priority_combo.set("Medium")  # Set default priority
+        self.update_priority_style()  # Apply priority-specific styling
         self.priority_combo.bind("<<ComboboxSelected>>", self.update_priority_style)
         self.create_tooltip(self.priority_combo, "Set task priority level")
 
-        # Add button moved to a separate row
+        # Add task button
         button_row = ttk.Frame(input_frame, style='TFrame')
         button_row.grid(row=2, column=0, columnspan=4, pady=(10, 0))
         add_button = ttk.Button(button_row, text="Add Task", command=self.add_task, style='TButton')
         add_button.pack()
         self.create_tooltip(add_button, "Add new task (Ctrl+N)")
 
-        # Controls section (Search, Filter, Theme)
+        # Search and filter controls section
         controls_frame = ttk.Frame(main_container, style='TFrame')
         controls_frame.pack(fill=tk.X, pady=(10, 15))
-        controls_frame.columnconfigure(1, weight=1) # Search entry expands
-        controls_frame.columnconfigure(3, weight=0) # Filter combo fixed width
-        controls_frame.columnconfigure(5, weight=0) # Theme combo fixed width
+        controls_frame.columnconfigure(1, weight=1)  # Make search entry expandable
 
-
-        # Search Section
-        ttk.Label(controls_frame, text="Search:", style='TLabel', font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, padx=(0, 10), pady=5, sticky='w')
-        self.search_entry = ttk.Entry(controls_frame, style='TEntry') # Width determined by grid expansion
+        # Search box
+        ttk.Label(controls_frame, text="Search:", style='TLabel', 
+                 font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, padx=(0, 10), pady=5, sticky='w')
+        self.search_entry = ttk.Entry(controls_frame, style='TEntry')
         self.search_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
-        self.search_entry.bind('<KeyRelease>', lambda e: self.update_treeview())
-        self.search_entry.bind('<Escape>', lambda e: [self.search_entry.delete(0, tk.END), self.update_treeview()])
+        
+        # Bind search events
+        self.search_entry.bind('<KeyRelease>', lambda e: self.update_treeview())  # Live search
+        self.search_entry.bind('<Escape>', lambda e: [self.search_entry.delete(0, tk.END), 
+                                                    self.update_treeview()])  # Clear search
         self.create_tooltip(self.search_entry, "Search tasks (Ctrl+F)\nPress Esc to clear")
 
-        # Filter section
-        ttk.Label(controls_frame, text="Filter:", style='TLabel', font=('Segoe UI', 10, 'bold')).grid(row=0, column=2, padx=(20, 10), pady=5, sticky='w')
-        self.filter_combo = ttk.Combobox(controls_frame, values=["All", "Completed", "Pending"], width=12, state='readonly', style='Filter.TCombobox')
+        # Filter dropdown
+        ttk.Label(controls_frame, text="Filter:", style='TLabel', 
+                 font=('Segoe UI', 10, 'bold')).grid(row=0, column=2, padx=(20, 10), pady=5, sticky='w')
+        self.filter_combo = ttk.Combobox(controls_frame, values=["All", "Completed", "Pending"], 
+                                       width=12, state='readonly', style='Filter.TCombobox')
         self.filter_combo.grid(row=0, column=3, padx=5, pady=5, sticky='w')
-        self.filter_combo.set("All")
+        self.filter_combo.set("All")  # Default to showing all tasks
         self.filter_combo.bind("<<ComboboxSelected>>", lambda e: self.update_treeview())
         self.create_tooltip(self.filter_combo, "Filter tasks by status")
 
@@ -517,141 +639,135 @@ class TodoApp:
             self.priority_combo.configure(style='TCombobox')
 
 
-    # MODIFIED: Use self.tasks_file consistently
     def save_tasks(self):
+        """Save tasks to JSON file with error handling"""
         try:
-            # Ensure all tasks have IDs before saving
+            # Ensure all tasks have valid IDs
             for task in self.tasks:
                 if 'id' not in task or not task['id']:
                     task['id'] = str(uuid.uuid4())
 
+            # Write tasks to file with pretty formatting
             with open(self.tasks_file, 'w') as f:
-                json.dump(self.tasks, f, indent=4) # Add indent for readability
+                json.dump(self.tasks, f, indent=4)
         except IOError as e:
             messagebox.showerror("Error", f"Failed to save tasks to {self.tasks_file}: {e}")
         except Exception as e:
             messagebox.showerror("Error", f"An unexpected error occurred while saving tasks: {e}")
 
-    # MODIFIED: Use self.tasks_file, ensure tasks get IDs
     def load_tasks(self):
+        """Load tasks from JSON file with error handling and validation"""
         try:
+            # Read tasks from file
             with open(self.tasks_file, 'r') as f:
                 loaded_tasks = json.load(f)
 
             self.tasks = []
             tasks_updated = False
+
+            # Validate and process each task
             for task in loaded_tasks:
-                if isinstance(task, dict): # Basic validation
-                    # FIX: Ensure every loaded task has a unique ID
+                if isinstance(task, dict):
+                    # Ensure each task has a unique ID
                     if 'id' not in task or not task['id']:
                         task['id'] = str(uuid.uuid4())
-                        tasks_updated = True # Mark if we added IDs
-                    # Optional: Add validation for other fields like deadline format
+                        tasks_updated = True
                     self.tasks.append(task)
                 else:
-                     print(f"Warning: Skipping invalid item in tasks.json: {task}") # Log warning
+                    print(f"Warning: Skipping invalid item in tasks.json: {task}")
 
-
-            # If we added IDs to tasks loaded from the file, save it back
+            # Save if we added any missing IDs
             if tasks_updated:
                 self.save_tasks()
 
-            # self.sort_tasks(self.sort_column, self.sort_order) # Sort after loading
-            self.update_treeview() # Update view includes sorting
+            self.update_treeview()
 
         except FileNotFoundError:
-            self.tasks = [] # Start fresh if file doesn't exist
+            self.tasks = []  # Start with empty task list
             self.update_treeview()
         except json.JSONDecodeError:
-            messagebox.showerror("Error", f"Error reading '{os.path.basename(self.tasks_file)}'. File might be corrupted. Starting fresh.")
+            messagebox.showerror("Error", 
+                               f"Error reading '{os.path.basename(self.tasks_file)}'. "
+                               "File might be corrupted. Starting fresh.")
             self.tasks = []
-            # Optionally backup corrupted file here
             self.update_treeview()
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load tasks: {e}")
             self.tasks = []
             self.update_treeview()
 
-    # MODIFIED: Sorting logic adjusted slightly for clarity
     def sort_tasks(self, column):
-        """Sorts tasks by the given column and updates the Treeview."""
+        """Sort tasks by the specified column"""
+        # Toggle sort order if clicking same column
         if self.sort_column == column:
-            self.sort_order = not self.sort_order # Toggle order
+            self.sort_order = not self.sort_order
         else:
             self.sort_column = column
-            self.sort_order = True # Default to ascending for new column
+            self.sort_order = True
 
         reverse = not self.sort_order
 
-        # Define sort keys
+        # Define sort keys for different columns
         if column == 'deadline':
-            # Sort by date, handle potential errors gracefully
+            # Sort by date, handling invalid dates
             def deadline_key(task):
                 try:
                     return datetime.strptime(task.get('deadline', ''), "%d-%m-%Y")
                 except (ValueError, TypeError):
-                    return datetime.max # Put invalid dates last
+                    return datetime.max  # Put invalid dates last
             key_func = deadline_key
         elif column == 'priority':
+            # Sort by priority level
             priority_order = {'Low': 1, 'Medium': 2, 'High': 3}
-            key_func = lambda task: priority_order.get(task.get('priority', 'Medium'), 2) # Default to Medium if missing/invalid
+            key_func = lambda task: priority_order.get(task.get('priority', 'Medium'), 2)
         elif column == 'completed':
-            key_func = lambda task: task.get('completed', False) # Treat missing as False
-        else: # Default to sorting by task text (case-insensitive)
+            key_func = lambda task: task.get('completed', False)
+        else:  # Sort by task text
             key_func = lambda task: task.get('task', '').lower()
 
-        # Perform sort
+        # Perform the sort
         try:
             self.tasks.sort(key=key_func, reverse=reverse)
         except Exception as e:
-             messagebox.showerror("Sort Error", f"Could not sort tasks: {e}") # Should not happen with safeguards
-             return # Avoid updating tree if sort failed
+            messagebox.showerror("Sort Error", f"Could not sort tasks: {e}")
+            return
 
-
-        # Update tree headings to show sort indicator (optional but nice)
+        # Update column headers to show sort direction
         for col in self.tree['columns']:
-             indicator = ''
-             if col == self.sort_column:
-                 indicator = ' ▲' if self.sort_order else ' ▼'
-             self.tree.heading(col, text=f"{col.capitalize()}{indicator}")
+            indicator = ''
+            if col == self.sort_column:
+                indicator = ' ▲' if self.sort_order else ' ▼'
+            self.tree.heading(col, text=f"{col.capitalize()}{indicator}")
 
+        # Refresh the display
+        self.update_treeview()
 
-        self.update_treeview() # Refresh the display
-
-
-    # MODIFIED: Insert items using task['id'] as iid
     def update_treeview(self):
-        """Clears and repopulates the Treeview based on current filters, search, and sort order."""
-        # Remember selection and scroll position (optional enhancement)
-        # selected_ids = self.tree.selection()
-        # yview = self.tree.yview()
-
-        # Clear existing items
+        """Update the task list display based on current filters and search criteria"""
+        # Clear existing items from the tree
         for item in self.tree.get_children():
             self.tree.delete(item)
 
+        # Get current filter and search settings
         current_filter = self.filter_combo.get()
         search_query = self.search_entry.get().strip().lower()
 
-        # Apply sorting IN PLACE before filtering/searching
-        # (Sorting is now handled by sort_tasks calling this AFTER sorting self.tasks)
-
-        # Iterate and insert items that match filters/search
+        # Iterate through tasks and apply filters
         for task in self.tasks:
-            # Ensure task has an ID (should be guaranteed by load/add)
+            # Ensure task has an ID
             task_id = task.get('id')
             if not task_id:
                 print(f"Warning: Task missing ID during Treeview update: {task.get('task')}")
-                continue # Skip tasks without ID
+                continue
 
             task_completed = task.get('completed', False)
 
-            # Apply filter
+            # Apply status filter (All, Completed, Pending)
             if (current_filter == "Completed" and not task_completed) or \
                (current_filter == "Pending" and task_completed):
                 continue
 
-            # Apply search
+            # Apply search filter across all fields
             if search_query:
                 task_text = task.get('task', '').lower()
                 task_deadline = task.get('deadline', '').lower()
@@ -661,7 +777,7 @@ class TodoApp:
                         search_query in task_priority):
                     continue
 
-            # Prepare display values
+            # Prepare values for display
             display_completed = '✓' if task_completed else '✗'
             display_values = (
                 task.get('task', ''),
@@ -670,25 +786,11 @@ class TodoApp:
                 display_completed
             )
 
-            # Define tags for styling (e.g., for completed tasks)
-            tags = ()
-            if task_completed:
-                 tags = ('completed',) # Add a tag for completed tasks
-
-            # MODIFIED: Insert using task['id'] as the item identifier (iid)
+            # Add task to tree with appropriate styling
             try:
-                 self.tree.insert('', 'end', iid=task_id, values=display_values, tags=tags)
+                self.tree.insert('', 'end', iid=task_id, values=display_values)
             except tk.TclError as e:
-                 print(f"Error inserting task {task_id} into treeview: {e}. Skipping.") # Handle potential duplicate ID error if logic flaw exists
-
-
-        # Configure tag styles (optional: e.g., gray out completed tasks)
-        # self.tree.tag_configure('completed', foreground='gray')
-
-
-        # Restore selection and scroll position (optional)
-        # self.tree.selection_set(selected_ids)
-        # self.tree.yview_moveto(yview[0])
+                print(f"Error inserting task {task_id} into treeview: {e}")
 
     def clear_inputs(self):
         self.task_entry.delete(0, tk.END)
@@ -698,7 +800,6 @@ class TodoApp:
         self.task_entry.focus() # Set focus back to task entry
 
 
-    # MODIFIED: Use task ID for reliable removal
     def remove_task(self):
         selected_items = self.tree.selection() # Get selected item IDs (task UUIDs)
         if not selected_items:
@@ -722,21 +823,17 @@ class TodoApp:
             self.save_tasks()
             self.update_treeview()
             self.update_status()
-            # Optional: Confirmation message
-            # messagebox.showinfo("Success", f"{removed_count} task(s) removed.")
         else:
              # This shouldn't happen if selection IDs are valid task IDs
              messagebox.showerror("Error", "Could not find selected tasks to remove.")
 
 
-    # MODIFIED: Renamed event handler, calls main edit logic
     def edit_task_event(self, event):
         """Handles the double-click event on the Treeview."""
         selected_item = self.tree.focus() # Get the item that has focus (double-clicked item)
         if selected_item:
             self.edit_task(task_id=selected_item) # Call edit logic with the task ID
 
-    # MODIFIED: Edit task using task ID
     def edit_task(self, task_id=None):
         """Opens the edit dialog for the task with the given ID."""
         if not task_id:
@@ -895,17 +992,14 @@ class TodoApp:
         edit_dialog.wait_window()
 
     def update_status(self):
+        """Update the status bar with current task statistics"""
+        # Calculate task statistics
         total = len(self.tasks)
         completed = sum(1 for task in self.tasks if task.get('completed', False))
         pending = total - completed
-
-        # Calculate completion percentage
         percentage = (completed / total * 100) if total > 0 else 0
 
-        # Add visual progress indicator (optional, might make status bar too wide)
-        # progress = '█' * int(percentage / 10) + '░' * (10 - int(percentage / 10))
-        # status_text = f"Tasks: {total} | Completed: {completed} | Pending: {pending} | Progress: [{progress}] {percentage:.1f}%"
-
+        # Update status bar text
         status_text = f"Total: {total} | Completed: {completed} | Pending: {pending} ({percentage:.0f}%)"
         self.status_bar.config(text=status_text)
 
@@ -955,14 +1049,11 @@ class TodoApp:
         except Exception as e:
             print(f"Error hiding status tooltip: {e}")
 
-    # MODIFIED: Call configure_styles AFTER changing theme variable
     def change_theme(self, event=None):
         new_theme = self.theme_combo.get()
         if new_theme in self.themes and new_theme != self.current_theme:
             self.current_theme = new_theme
             self.configure_styles() # Apply new theme styles to all widgets
-            # self.update_treeview() # update_treeview is implicitly called by configure_styles if needed
-            # self.update_status() # update_status is implicitly called by configure_styles
 
 
 if __name__ == "__main__":
