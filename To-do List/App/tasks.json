@@ -1,0 +1,10 @@
+[
+    {
+        "id": "210254b7-06fc-4930-bb27-33934c3d9e7f",
+        "task": "Sample Task - Click checkbox to complete",
+        "deadline": "10-04-2025",
+        "priority": "Medium",
+        "completed": false,
+        "selected": true
+    }
+]

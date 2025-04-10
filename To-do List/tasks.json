@@ -1,0 +1,23 @@
+[
+    {
+        "task": "leetcoding",
+        "deadline": "31-03-2025",
+        "priority": "High",
+        "completed": true,
+        "id": "b03306fd-f5d7-492d-8481-deceb01910bb"
+    },
+    {
+        "task": "your lie in april",
+        "deadline": "31-03-2025",
+        "priority": "Medium",
+        "completed": true,
+        "id": "349b06fd-8654-4154-bce5-805b1e63d490"
+    },
+    {
+        "id": "fdbbc93d-7f07-4ac4-8d13-bf0e59c2746b",
+        "task": "movie time",
+        "deadline": "12-04-2025",
+        "priority": "High",
+        "completed": true
+    }
+]

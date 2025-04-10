@@ -1,0 +1,249 @@
+#:kivy 1.11.1
+
+<TaskItem>:
+    orientation: 'horizontal'
+    size_hint_y: None
+    height: '50dp'
+    padding: '10dp'
+    spacing: '10dp'
+    canvas.before:
+        Color:
+            rgba: 0.98, 0.98, 0.98, 1 if not root.selected else (0.9, 0.95, 1, 1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+        Color:
+            rgba: 0.9, 0.9, 0.9, 1
+        Line:
+            points: self.x, self.y, self.right, self.y
+            width: 1
+
+    CheckBox:
+        size_hint_x: None
+        width: '30dp'
+        active: root.completed
+        on_active: root.toggle_complete()
+
+    CheckBox:
+        size_hint_x: None
+        width: '30dp'
+        active: root.selected
+        on_active: root.toggle_select()
+
+    Label:
+        text: root.task_text
+        size_hint_x: 0.4
+        text_size: self.width, None
+        halign: 'left'
+        valign: 'middle'
+        color: 0.3, 0.3, 0.3, 1
+        strikethrough: root.completed
+
+    Label:
+        text: root.deadline_text
+        size_hint_x: 0.2
+        text_size: self.width, None
+        halign: 'center'
+        valign: 'middle'
+        color: 0.3, 0.3, 0.3, 1
+
+    Label:
+        text: root.priority_text
+        size_hint_x: 0.2
+        text_size: self.width, None
+        halign: 'center'
+        valign: 'middle'
+        color: 0.3, 0.3, 0.3, 1
+
+    Button:
+        text: 'Edit'
+        size_hint_x: 0.1
+        on_press: root.edit_task()
+        background_color: 0.4, 0.6, 1, 1
+
+<TodoLayout>:
+    orientation: 'vertical'
+    canvas.before:
+        Color:
+            rgba: 0.95, 0.95, 0.95, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    # Header
+    BoxLayout:
+        size_hint_y: None
+        height: '60dp'
+        padding: '10dp'
+        canvas.before:
+            Color:
+                rgba: 0.2, 0.3, 0.4, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        Label:
+            text: 'To-Do List Manager'
+            font_size: '24sp'
+            color: 1, 1, 1, 1
+            bold: True
+
+    # Input Area
+    GridLayout:
+        size_hint_y: None
+        height: '120dp'
+        cols: 2
+        padding: '10dp'
+        spacing: '10dp'
+
+        Label:
+            text: 'Task:'
+            size_hint_x: None
+            width: '100dp'
+
+        TextInput:
+            id: task_input
+            multiline: False
+            hint_text: 'Enter task description'
+
+        Label:
+            text: 'Deadline:'
+            size_hint_x: None
+            width: '100dp'
+
+        TextInput:
+            id: deadline_input
+            multiline: False
+            hint_text: 'DD-MM-YYYY'
+
+        Label:
+            text: 'Priority:'
+            size_hint_x: None
+            width: '100dp'
+
+        BoxLayout:
+            spacing: '10dp'
+
+            Spinner:
+                id: priority_spinner
+                text: 'Medium'
+                values: ['Low', 'Medium', 'High']
+                size_hint_x: 0.7
+
+            Button:
+                text: 'Add Task'
+                size_hint_x: 0.3
+                background_color: 0.2, 0.7, 0.3, 1
+                on_press: root.add_task_ui()
+
+    # Search and Filter Area
+    BoxLayout:
+        size_hint_y: None
+        height: '50dp'
+        padding: '10dp'
+        spacing: '10dp'
+
+        TextInput:
+            id: search_input
+            hint_text: 'Search tasks...'
+            multiline: False
+            size_hint_x: 0.4
+            on_text: root.search_tasks(self.text)
+
+        Label:
+            text: 'Filter:'
+            size_hint_x: None
+            width: '50dp'
+
+        Spinner:
+            id: filter_spinner
+            text: 'All'
+            values: ['All', 'Completed', 'Pending']
+            size_hint_x: 0.2
+            on_text: root.apply_filter(self.text)
+
+        Label:
+            text: 'Theme:'
+            size_hint_x: None
+            width: '50dp'
+
+        Spinner:
+            id: theme_spinner
+            text: 'Light'
+            values: ['Light', 'Dark']
+            size_hint_x: 0.2
+            on_text: root.apply_theme(self.text)
+
+        Button:
+            text: 'Remove Selected'
+            size_hint_x: 0.2
+            background_color: 0.8, 0.2, 0.2, 1
+            on_press: root.remove_selected()
+
+    # Task List Header
+    BoxLayout:
+        size_hint_y: None
+        height: '40dp'
+        padding: '10dp'
+        spacing: '10dp'
+        canvas.before:
+            Color:
+                rgba: 0.2, 0.3, 0.4, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        Label:
+            text: 'Complete'
+            size_hint_x: None
+            width: '30dp'
+            color: 1, 1, 1, 1
+
+        Label:
+            text: 'Select'
+            size_hint_x: None
+            width: '30dp'
+            color: 1, 1, 1, 1
+
+        Label:
+            text: 'Task'
+            size_hint_x: 0.4
+            color: 1, 1, 1, 1
+
+        Label:
+            text: 'Deadline'
+            size_hint_x: 0.2
+            color: 1, 1, 1, 1
+
+        Label:
+            text: 'Priority'
+            size_hint_x: 0.2
+            color: 1, 1, 1, 1
+
+        Label:
+            text: 'Actions'
+            size_hint_x: 0.1
+            color: 1, 1, 1, 1
+
+    # Task List
+    RecycleView:
+        id: task_list
+        viewclass: 'TaskItem'
+        effect_cls: 'ScrollEffect'
+        scroll_type: ['bars', 'content']
+        bar_width: '10dp'
+        RecycleBoxLayout:
+            default_size: None, dp(50)
+            default_size_hint: 1, None
+            size_hint_y: None
+            height: self.minimum_height
+            orientation: 'vertical'
+            spacing: '2dp'
+
+    # Status Bar
+    Label:
+        id: status_bar
+        size_hint_y: None
+        height: '30dp'
+        text: 'Total: 0 | Completed: 0 | Pending: 0 (0%)'
+        color: 0.3, 0.3, 0.3, 1
