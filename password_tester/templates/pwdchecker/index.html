@@ -1,0 +1,218 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Breach Analyzer</title>
+    <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    <a href="https://www.buymeacoffee.com/bennyaliston" target="_blank" class="bmc-btn">
+        ☕ Buy Me a Coffee
+    </a>
+    <h1>&#128273; Password Analyzer</h1>
+    <div class="warning">
+        <p>⚠️ <b>For educational/ethical use only!</b> Do <u>not</u> test real passwords. This tool demonstrates how attackers analyze passwords and why strong passwords matter.</p>
+    </div>
+    <form method="post" enctype="multipart/form-data" style="margin-bottom:1.5em;">
+        {% csrf_token %}
+        <label for="password" style="margin-right:8px;">Enter Password:</label>
+        <div class="form-row">
+            <div class="form-col">
+                <input type="password" id="password" name="password" required autofocus oninput="updateStrengthMeter()" aria-label="Enter password">
+                <label style="font-size:0.98em;cursor:pointer;user-select:none;">
+                    <input type="checkbox" id="show_password" onchange="togglePassword('password', this)" aria-label="Show main password"> Show Password
+                </label>
+            </div>
+            <div class="form-btn-col">
+                <button type="submit" class="form-btn" aria-label="Analyze password">Analyze</button>
+            </div>
+        </div>
+        <br><br>
+        <label for="compare_password" style="margin-right:8px;">Compare with:</label>
+        <div class="form-row">
+            <div class="form-col">
+                <input type="password" id="compare_password" name="compare_password" placeholder="(optional)" aria-label="Compare password">
+                <label style="font-size:0.98em;cursor:pointer;user-select:none;margin-top:0.2em;">
+                    <input type="checkbox" id="show_compare_password" onchange="togglePassword('compare_password', this)" aria-label="Show compare password"> Show Password
+                </label>
+                <div style="margin-top:0.6em;display:flex;flex-direction:column;gap:0.4em;">
+                    <label style="font-size:0.96em;">Password Options:</label>
+                    <div style="display:flex;align-items:center;gap:1em;flex-wrap:wrap;">
+                        <label style="font-size:0.95em;"><input type="checkbox" id="opt_upper" checked aria-label="Include uppercase letters"> Uppercase</label>
+                        <label style="font-size:0.95em;"><input type="checkbox" id="opt_lower" checked aria-label="Include lowercase letters"> Lowercase</label>
+                        <label style="font-size:0.95em;"><input type="checkbox" id="opt_num" checked aria-label="Include numbers"> Numbers</label>
+                        <label style="font-size:0.95em;"><input type="checkbox" id="opt_sym" checked aria-label="Include symbols"> Symbols</label>
+                        <label style="font-size:0.95em;">Length: <input type="number" id="opt_len" min="8" max="32" value="14" style="width:3em;" aria-label="Password length"></label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-btn-col">
+                <button type="button" class="form-btn" onclick="copyToClipboard('compare_password')" aria-label="Copy compare password">Copy</button>
+                <button type="button" class="form-btn" onclick="suggestComparePassword()" aria-label="Suggest password">Suggest Password</button>
+            </div>
+        </div>
+    </form>
+    <!-- Separate Dictionary Upload/Delete Form -->
+    <form method="post" enctype="multipart/form-data" style="margin-bottom:1.5em;" id="dict-upload-form">
+        {% csrf_token %}
+        <label for="custom_dict">Upload Custom Disallowed Words/Phrases (.txt):</label>
+        <input type="file" id="custom_dict" name="custom_dict" accept=".txt" class="file-input" onchange="showFilename(this)" aria-label="Upload custom dictionary">
+        <label for="custom_dict" class="file-label">Choose File</label>
+        <span id="filename" class="filename" aria-live="polite"></span>
+        <button type="submit" class="form-btn" style="margin-top:0.8em;">Upload Dictionary</button>
+        <button type="submit" name="delete_custom_dict" value="1" class="form-btn" style="background:#ff3333;color:#fff;margin-top:0.8em;">Delete Custom Dictionary</button>
+        {% if custom_dict_status %}
+            <div class="results" style="margin-top:1em;">{{ custom_dict_status }}</div>
+        {% endif %}
+    </form>
+    {% if generated_password %}
+    <div class="results" style="margin-top:10px;">
+        <b>Suggested Strong Password:</b>
+        <span id="genpw">{{ generated_password }}</span>
+        <button type="button" onclick="copyGenerated()">Copy</button>
+    </div>
+    {% endif %}
+    <div id="strength-meter" style="height:8px;width:100%;background:#222;border-radius:4px;overflow:hidden;margin-bottom:1em;"><div id="strength-bar" style="height:100%;width:0;background:#39ff14;transition:width 0.3s;"></div></div>
+    <div id="strength-feedback" style="margin-bottom:1em;font-size:1em;"></div>
+    <ul id="policy-list" style="margin-bottom:1em;font-size:0.98em;"></ul>
+    <div id="entropy-display" style="margin-bottom:1em;font-size:0.98em;"></div>
+    <div id="breach-warning" style="margin-bottom:1em;font-size:1em;color:#ff3333;"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
+    <script src="{% static 'main.js' %}"></script>
+    {% if compare %}
+    <div class="results" style="margin-bottom:1em;">
+        <b>Comparison:</b>
+        <ul>
+            <li>First: {{ password_checked|slice:":3" }}... — Score: {{ results.zxcvbn_result.score }}</li>
+            <li>Second: {{ compare.pw|slice:":3" }}... — Score: {{ compare.results.zxcvbn_result.score }}</li>
+        </ul>
+    </div>
+    {% endif %}
+    {% if policy_results %}
+    <div class="results" style="margin-bottom:1em;">
+        <b>Password Policy:</b>
+        <ul>
+        {% for desc, ok in policy_results %}
+            <li>{% if ok %}✅{% else %}❌{% endif %} {{ desc }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% if results.extra_checks %}
+    <div class="results" style="margin-bottom:1em;">
+        <b>Deep Security Checks:</b>
+        <ul>
+        {% for msg in results.extra_checks %}
+            <li>⚠️ {{ msg }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% if hacker_steps %}
+    {{ hacker_steps|json_script:"hackerSteps" }}
+    <div class="terminal" id="hacker-log">
+        <pre id="terminal-output"></pre><span class="cursor"></span>
+    </div>
+    {% endif %}
+    {% if results %}
+        <div class="results">
+            <h2>Results for: <span style="color:#fff">{{ password_checked|slice:":3" }}...</span></h2>
+            {% if results.error %}
+                 <p class="error">An error occurred: {{ results.error }}</p>
+            {% endif %}
+            <div id="darkwebScanContainer"></div>
+            <div id="breachIndicatorContainer" style="display:none;"></div>
+            {% if basic_feedback %}
+                <div class="results" style="border-color:#ffcc00;">
+                    <h3>Basic Checks</h3>
+                    <ul>
+                        {% for item in basic_feedback %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% if basic_feedback|length == 0 %}
+                        <span style="color:#39ff14;">All basic password requirements are met!</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if advanced_feedback %}
+                <div class="results" style="border-color:#00fff7;">
+                    <h3>Advanced Insights</h3>
+                    <ul>
+                        {% for item in advanced_feedback %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            {% if results.zxcvbn_result %}
+                <h3>Strength Analysis (zxcvbn):</h3>
+                <p><strong>Score:</strong> <span class="score-{{ results.zxcvbn_result.score }}">
+                    {{ results.zxcvbn_result.score }} / 4
+                    {% if results.zxcvbn_result.score == 0 %} (Very Weak)
+                    {% elif results.zxcvbn_result.score == 1 %} (Weak)
+                    {% elif results.zxcvbn_result.score == 2 %} (Fair)
+                    {% elif results.zxcvbn_result.score == 3 %} (Good)
+                    {% elif results.zxcvbn_result.score == 4 %} (Strong)
+                    {% endif %}
+                </span></p>
+                <p><strong>Estimated time to crack (online, fast hashing):</strong> {{ results.zxcvbn_result.crack_times_display.online_throttling_100_per_hour }}</p>
+                <p><strong>Estimated time to crack (offline, slow hashing):</strong> {{ results.zxcvbn_result.crack_times_display.offline_slow_hashing_1e4_per_second }}</p>
+                {% if results.zxcvbn_result.feedback.warning %}
+                    <p><strong>Warning:</strong> <span style="color: #ffcc00;">{{ results.zxcvbn_result.feedback.warning }}</span></p>
+                {% endif %}
+                {% if results.zxcvbn_result.feedback.suggestions %}
+                    <p><strong>Suggestions:</strong></p>
+                    <ul>
+                    {% for s in results.zxcvbn_result.feedback.suggestions %}
+                        <li>{{ s }}</li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endif %}
+            <h3>Analysis Report:</h3>
+            <ul>
+                <li><b>Entropy:</b> {{ results.entropy }} bits</li>
+                <li><b>Keyboard Patterns:</b> {% if results.keyboard_patterns %}<span class="error">{{ results.keyboard_patterns|join:", " }}</span>{% else %}None detected{% endif %}</li>
+                <li><b>Leet/Dictionary Matches:</b> {% if results.leet_matches %}<span class="error">{{ results.leet_matches|join:", " }}</span>{% else %}None detected{% endif %}</li>
+                <li><b>Brute-force time (1B/sec):</b>
+                    {% if results.brute_force_seconds < 0.01 %}
+                        <span class="error">&lt; 0.01 seconds (Very Weak)</span>
+                    {% elif results.brute_force_seconds < 60 %}
+                        <span class="error">{{ results.brute_force_seconds|floatformat:4 }} seconds (Very Weak)</span>
+                    {% elif results.brute_force_seconds < 3600 %}
+                        <span class="error">{{ results.brute_force_minutes|floatformat:2 }} minutes (Weak)</span>
+                    {% elif results.brute_force_seconds < 86400 %}
+                        {{ results.brute_force_hours|floatformat:2 }} hours
+                    {% elif results.brute_force_seconds < 31536000 %}
+                        {{ results.brute_force_days|floatformat:2 }} days
+                    {% elif results.brute_force_seconds < 31851360 %}
+                        <span class="strong">&lt; 1 year</span>
+                    {% else %}
+                        {{ results.brute_force_years|floatformat:2 }} years
+                    {% endif %}
+                </li>
+                <li><b>HIBP Breach Count:</b> {% if results.hibp_count > 0 %}<span class="breached">Found in {{ results.hibp_count }} breaches!</span>{% elif results.hibp_count == 0 %}<span class="not-breached">Not found in breaches</span>{% else %}Unknown (network error?){% endif %}</li>
+            </ul>
+        </div>
+    {% endif %}
+    <div class="privacy" style="margin: 24px auto 0 auto; max-width: 700px; background: rgba(39,255,100,0.13); color: #fff; border-radius: 10px; padding: 18px 24px; font-size: 1.08em; text-align: center; box-shadow: none; letter-spacing: 0.02em;">
+        <b>Privacy Statement:</b> This tool does <u>not</u> store, save, or log any passwords you enter. All password analysis is performed in-memory and is never retained or shared. For your safety, do not use real or sensitive passwords.
+    </div>
+    <footer style="margin-top:40px; color:#fff; background:rgba(39,255,100,0.13); font-size:1.08em; border-radius:10px; box-shadow:none; padding:18px 24px; text-align:center; letter-spacing:0.02em;">
+        <p style="margin:0; font-weight:bold; text-shadow:none;">
+            Made for <b>Knowledge purposes only</b>.<br>
+            Learn more about password security at
+            <a href="https://haveibeenpwned.com/Passwords" target="_blank" style="color:#39ff14;text-decoration:underline;text-shadow:none;">HIBP</a>
+            and
+            <a href="https://www.owasp.org/index.php/Password_special_characters" target="_blank" style="color:#39ff14;text-decoration:underline;text-shadow:none;">OWASP</a>.
+        </p>
+    </footer>
+</body>
+</html>
