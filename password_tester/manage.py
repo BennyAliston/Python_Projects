@@ -3,9 +3,12 @@
 import os
 import sys
 
+# This file is the entry point for managing the Django project.
+# It provides command-line utilities for tasks like running the server, migrations, and more.
 
 def main():
     """Run administrative tasks."""
+    # Sets up the environment and executes the command-line utility.
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'password_tester.settings')
     try:
         from django.core.management import execute_from_command_line

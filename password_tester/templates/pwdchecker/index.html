@@ -1,35 +1,63 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Breach Analyzer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- Head section includes metadata, title, and external resources like fonts and stylesheets -->
+    <meta charset="UTF-8"> <!-- Specifies the character encoding for the document -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Ensures proper rendering on mobile devices -->
+    <title>Password Breach Analyzer</title> <!-- Title displayed in the browser tab -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet"> <!-- External font -->
     <style>
+        /* General body styling */
         body {
-            background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%);
-            color: #39ff14;
-            font-family: 'Share Tech Mono', 'Fira Mono', 'Consolas', monospace;
-            padding: 4vw;
-            min-height: 100vh;
-            letter-spacing: 0.03em;
-            margin: 0;
+            background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%); /* Gradient background */
+            color: #39ff14; /* Neon green text color */
+            font-family: 'Share Tech Mono', 'Fira Mono', 'Consolas', monospace; /* Monospace font */
+            padding: 4vw; /* Padding around the body */
+            min-height: 100vh; /* Ensure the body covers the full viewport height */
+            letter-spacing: 0.03em; /* Slight spacing between letters */
+            margin: 0; /* Remove default margin */
         }
+
+        /* Styling for the terminal-like container */
         .terminal {
-            background: rgba(24,24,24,0.98);
-            border-radius: 8px;
-            box-shadow: 0 0 30px #00ffcc33, 0 0 3px #39ff14;
-            padding: 5vw 4vw;
-            margin-top: 5vw;
-            font-size: 1.1em;
-            min-height: 180px;
-            border: 1.5px solid #39ff14;
-            text-shadow: 0 0 2px #39ff14, 0 0 8px #00ffcc44;
-            position: relative;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
+            background: rgba(24,24,24,0.98); /* Dark semi-transparent background */
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 0 30px #00ffcc33, 0 0 3px #39ff14; /* Neon glow effect */
+            padding: 5vw 4vw; /* Padding inside the container */
+            margin-top: 5vw; /* Space above the container */
+            font-size: 1.1em; /* Slightly larger text */
+            min-height: 180px; /* Minimum height */
+            border: 1.5px solid #39ff14; /* Neon green border */
+            text-shadow: 0 0 2px #39ff14, 0 0 8px #00ffcc44; /* Text glow effect */
+            position: relative; /* Positioning context for child elements */
+            max-width: 700px; /* Maximum width */
+            margin-left: auto; /* Center horizontally */
+            margin-right: auto; /* Center horizontally */
         }
+
+        /* Styling for buttons */
+        .form-btn {
+            height: 2.3em; /* Button height */
+            min-width: 90px; /* Minimum width */
+            font-size: 1em; /* Font size */
+            border-radius: 6px; /* Rounded corners */
+            border: none; /* Remove border */
+            background: #39ff14; /* Neon green background */
+            color: #181818; /* Dark text color */
+            font-weight: bold; /* Bold text */
+            transition: background 0.18s; /* Smooth background transition */
+            box-shadow: 0 0 5px #39ff1455; /* Subtle glow effect */
+            cursor: pointer; /* Pointer cursor on hover */
+        }
+
+        /* Hover effect for buttons */
+        .form-btn:hover {
+            background: #00fff7; /* Change background to neon blue */
+            color: #181818; /* Keep text color dark */
+        }
+
         .results {
             margin-top: 5vw;
             padding: 4vw 3vw;
@@ -241,23 +269,6 @@
             background: #181818;
             color: #39ff14;
         }
-        .form-btn {
-            height: 2.3em;
-            min-width: 90px;
-            font-size: 1em;
-            border-radius: 6px;
-            border: none;
-            background: #39ff14;
-            color: #181818;
-            font-weight: bold;
-            transition: background 0.18s;
-            box-shadow: 0 0 5px #39ff1455;
-            cursor: pointer;
-        }
-        .form-btn:hover {
-            background: #00fff7;
-            color: #181818;
-        }
         .btn, button[type="submit"], button[type="button"] {
             background: linear-gradient(90deg, #00fff7 0%, #39ff14 100%);
             color: #222;
@@ -307,49 +318,38 @@
     </style>
 </head>
 <body>
-    <h1>&#128273; Password Analyzer</h1>
+    <!-- This file is the main HTML template for the `pwdchecker` app. -->
+    <!-- It provides the user interface for password analysis, dictionary management, and password generation. -->
+
+    <h1>&#128273; Password Analyzer</h1> <!-- Main heading with a lock emoji -->
+
+    <!-- Warning section to inform users about ethical usage -->
     <div class="warning">
         <p>⚠️ <b>For educational/ethical use only!</b> Do <u>not</u> test real passwords. This tool demonstrates how attackers analyze passwords and why strong passwords matter.</p>
     </div>
+
+    <!-- Form for password analysis -->
     <form method="post" enctype="multipart/form-data" style="margin-bottom:1.5em;">
-        {% csrf_token %}
+        {% csrf_token %} <!-- Django CSRF token for security -->
         <label for="password" style="margin-right:8px;">Enter Password:</label>
         <div class="form-row">
             <div class="form-col">
-                <input type="password" id="password" name="password" required autofocus oninput="updateStrengthMeter()" aria-label="Enter password">
+                <input type="password" id="password" name="password" required autofocus oninput="updateStrengthMeter()" aria-label="Enter password"> <!-- Password input field -->
                 <label style="font-size:0.98em;cursor:pointer;user-select:none;">
-                    <input type="checkbox" id="show_password" onchange="togglePassword('password', this)" aria-label="Show main password"> Show Password
+                    <input type="checkbox" id="show_password" onchange="togglePassword('password', this)" aria-label="Show main password"> Show Password <!-- Checkbox to toggle password visibility -->
                 </label>
             </div>
             <div class="form-btn-col">
-                <button type="submit" class="form-btn" aria-label="Analyze password">Analyze</button>
+                <button type="submit" class="form-btn" aria-label="Analyze password">Analyze</button> <!-- Submit button for analysis -->
             </div>
         </div>
-        <script>
-        function togglePassword(inputId, checkbox) {
-            const input = document.getElementById(inputId);
-            input.type = checkbox.checked ? 'text' : 'password';
-        }
-        function suggestPassword() {
-            // Simple strong password generator (customize as needed)
-            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}";
-            let password = "";
-            for (let i = 0; i < 14; i++) {
-                password += charset.charAt(Math.floor(Math.random() * charset.length));
-            }
-            const pwInput = document.getElementById('password');
-            pwInput.value = password;
-            // Optionally, trigger strength meter update
-            if (typeof updateStrengthMeter === 'function') updateStrengthMeter();
-        }
-        </script>
         <br><br>
         <label for="compare_password" style="margin-right:8px;">Compare with:</label>
         <div class="form-row">
             <div class="form-col">
-                <input type="password" id="compare_password" name="compare_password" placeholder="(optional)" aria-label="Compare password">
+                <input type="password" id="compare_password" name="compare_password" placeholder="(optional)" aria-label="Compare password"> <!-- Optional password comparison field -->
                 <label style="font-size:0.98em;cursor:pointer;user-select:none;margin-top:0.2em;">
-                    <input type="checkbox" id="show_compare_password" onchange="togglePassword('compare_password', this)" aria-label="Show compare password"> Show Password
+                    <input type="checkbox" id="show_compare_password" onchange="togglePassword('compare_password', this)" aria-label="Show compare password"> Show Password <!-- Checkbox to toggle comparison password visibility -->
                 </label>
                 <div style="margin-top:0.6em;display:flex;flex-direction:column;gap:0.4em;">
                     <label style="font-size:0.96em;">Password Options:</label>
@@ -363,38 +363,21 @@
                 </div>
             </div>
             <div class="form-btn-col">
-                <button type="button" class="form-btn" onclick="copyToClipboard('compare_password')" aria-label="Copy compare password">Copy</button>
-                <button type="button" class="form-btn" onclick="suggestComparePassword()" aria-label="Suggest password">Suggest Password</button>
+                <button type="button" class="form-btn" onclick="copyToClipboard('compare_password')" aria-label="Copy compare password">Copy</button> <!-- Button to copy comparison password -->
+                <button type="button" class="form-btn" onclick="suggestComparePassword()" aria-label="Suggest password">Suggest Password</button> <!-- Button to suggest a password -->
             </div>
         </div>
-        <script>
-        function suggestComparePassword() {
-            // Build charset based on options
-            let charset = '';
-            if (document.getElementById('opt_upper').checked) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            if (document.getElementById('opt_lower').checked) charset += 'abcdefghijklmnopqrstuvwxyz';
-            if (document.getElementById('opt_num').checked) charset += '0123456789';
-            if (document.getElementById('opt_sym').checked) charset += '!@#$%^&*()-_=+[]{}';
-            let len = parseInt(document.getElementById('opt_len').value) || 14;
-            if (!charset) charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; // fallback
-            let password = '';
-            for (let i = 0; i < len; i++) {
-                password += charset.charAt(Math.floor(Math.random() * charset.length));
-            }
-            const pwInput = document.getElementById('compare_password');
-            pwInput.value = password;
-        }
-        </script>
     </form>
-    <!-- Separate Dictionary Upload/Delete Form -->
+
+    <!-- Section for uploading or deleting custom dictionaries -->
     <form method="post" enctype="multipart/form-data" style="margin-bottom:1.5em;" id="dict-upload-form">
         {% csrf_token %}
         <label for="custom_dict">Upload Custom Disallowed Words/Phrases (.txt):</label>
-        <input type="file" id="custom_dict" name="custom_dict" accept=".txt" class="file-input" onchange="showFilename(this)" aria-label="Upload custom dictionary">
+        <input type="file" id="custom_dict" name="custom_dict" accept=".txt" class="file-input" onchange="showFilename(this)" aria-label="Upload custom dictionary"> <!-- File input for custom dictionary -->
         <label for="custom_dict" class="file-label">Choose File</label>
-        <span id="filename" class="filename" aria-live="polite"></span>
-        <button type="submit" class="form-btn" style="margin-top:0.8em;">Upload Dictionary</button>
-        <button type="submit" name="delete_custom_dict" value="1" class="form-btn" style="background:#ff3333;color:#fff;margin-top:0.8em;">Delete Custom Dictionary</button>
+        <span id="filename" class="filename" aria-live="polite"></span> <!-- Displays the selected file name -->
+        <button type="submit" class="form-btn" style="margin-top:0.8em;">Upload Dictionary</button> <!-- Button to upload dictionary -->
+        <button type="submit" name="delete_custom_dict" value="1" class="form-btn" style="background:#ff3333;color:#fff;margin-top:0.8em;">Delete Custom Dictionary</button> <!-- Button to delete dictionary -->
         {% if custom_dict_status %}
             <div class="results" style="margin-top:1em;">{{ custom_dict_status }}</div>
         {% endif %}
@@ -412,67 +395,49 @@
     <div id="entropy-display" style="margin-bottom:1em;font-size:0.98em;"></div>
     <div id="breach-warning" style="margin-bottom:1em;font-size:1em;color:#ff3333;"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
+    <script src="/static/pwdchecker/main.js"></script>
     <script>
-    async function checkBreach(password) {
-        if (!password) {
-            document.getElementById('breach-warning').textContent = '';
-            return;
-        }
-        // SHA-1 hash function (browser native)
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        const hashBuffer = await window.crypto.subtle.digest('SHA-1', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-        const prefix = hashHex.slice(0, 5);
-        const suffix = hashHex.slice(5);
-        // Query HIBP API
-        try {
-            const resp = await fetch('https://api.pwnedpasswords.com/range/' + prefix);
-            const text = await resp.text();
-            const found = text.split('\n').some(line => line.startsWith(suffix));
-            document.getElementById('breach-warning').textContent = found ? '⚠️ This password has appeared in a data breach! Choose another.' : '';
-        } catch (e) {
-            document.getElementById('breach-warning').textContent = 'Could not check breaches (offline or API error).';
-        }
+    // Function to toggle password visibility
+    function togglePassword(inputId, checkbox) {
+        const input = document.getElementById(inputId); // Get the password input field by ID
+        input.type = checkbox.checked ? 'text' : 'password'; // Toggle between 'text' and 'password' types
     }
 
-    function updateStrengthMeter() {
-        const pw = document.getElementById('password').value;
-        const bar = document.getElementById('strength-bar');
-        const feedback = document.getElementById('strength-feedback');
-        const policyList = document.getElementById('policy-list');
-        const entropyDisplay = document.getElementById('entropy-display');
-        if (window.zxcvbn) {
-            const result = zxcvbn(pw);
-            const score = result.score;
-            const colors = ['#ff3333', '#ff9933', '#ffcc00', '#99ff33', '#39ff14'];
-            bar.style.width = ((score + 1) * 20) + '%';
-            bar.style.background = colors[score];
-            feedback.textContent = result.feedback.suggestions.join(' ') || result.feedback.warning || (score > 2 ? 'Strong password!' : '');
-            // Policy
-            const policies = [
-                {ok: pw.length >= 10, label: 'At least 10 characters'},
-                {ok: /[A-Z]/.test(pw), label: 'Uppercase letter'},
-                {ok: /[a-z]/.test(pw), label: 'Lowercase letter'},
-                {ok: /[0-9]/.test(pw), label: 'Number'},
-                {ok: /[^A-Za-z0-9]/.test(pw), label: 'Symbol'}
-            ];
-            policyList.innerHTML = policies.map(p => `<li style='color:${p.ok ? '#39ff14':'#ff3333'}'>${p.ok ? '✔':'✖'} ${p.label}</li>`).join('');
-            // Entropy
-            entropyDisplay.textContent = 'Entropy: ' + (result.entropy ? result.entropy.toFixed(2) : '0') + ' bits';
-        } else {
-            bar.style.width = '0';
-            feedback.textContent = '';
-            policyList.innerHTML = '';
-            entropyDisplay.textContent = '';
+    // Function to suggest a strong password
+    function suggestPassword() {
+        // Define a character set for generating passwords
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}";
+        let password = "";
+        for (let i = 0; i < 14; i++) {
+            password += charset.charAt(Math.floor(Math.random() * charset.length)); // Randomly select characters
         }
-        checkBreach(pw);
+        const pwInput = document.getElementById('password'); // Get the password input field
+        pwInput.value = password; // Set the generated password
+        // Optionally, update the strength meter if the function exists
+        if (typeof updateStrengthMeter === 'function') updateStrengthMeter();
     }
-    </script>
-    <script>
+
+    // Function to suggest a password for comparison
+    function suggestComparePassword() {
+        // Build a character set based on user-selected options
+        let charset = '';
+        if (document.getElementById('opt_upper').checked) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        if (document.getElementById('opt_lower').checked) charset += 'abcdefghijklmnopqrstuvwxyz';
+        if (document.getElementById('opt_num').checked) charset += '0123456789';
+        if (document.getElementById('opt_sym').checked) charset += '!@#$%^&*()-_=+[]{}';
+        let len = parseInt(document.getElementById('opt_len').value) || 14; // Default length is 14
+        if (!charset) charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; // Fallback charset
+        let password = '';
+        for (let i = 0; i < len; i++) {
+            password += charset.charAt(Math.floor(Math.random() * charset.length)); // Randomly select characters
+        }
+        const pwInput = document.getElementById('compare_password'); // Get the comparison password input field
+        pwInput.value = password; // Set the generated password
+    }
+
+    // Function to copy text to clipboard
     function copyToClipboard(id) {
-        const el = document.getElementById(id);
+        const el = document.getElementById(id); // Get the element by ID
         if (el && el.value) {
             // Try modern clipboard API first
             if (navigator.clipboard && window.isSecureContext) {
@@ -482,7 +447,7 @@
             }
         }
         function fallbackCopy() {
-            // Fallback for mobile/older browsers
+            // Fallback for older browsers
             const temp = document.createElement('textarea');
             temp.value = el.value;
             temp.setAttribute('readonly', '');
@@ -497,29 +462,15 @@
             document.body.removeChild(temp);
         }
     }
-    function copyGenerated() {
-        const el = document.getElementById('genpw');
-        if (el) {
-            const text = el.textContent;
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(showCopyToast, fallbackCopy);
-            } else {
-                fallbackCopy();
-            }
-            function fallbackCopy() {
-                const temp = document.createElement('textarea');
-                temp.value = text;
-                temp.setAttribute('readonly', '');
-                temp.style.position = 'absolute';
-                temp.style.left = '-9999px';
-                document.body.appendChild(temp);
-                temp.select();
-                try {
-                    document.execCommand('copy');
-                    showCopyToast();
-                } catch (err) {}
-                document.body.removeChild(temp);
-            }
+
+    // Function to display a toast message when text is copied
+    function showCopyToast() {
+        const toast = document.getElementById('copy-toast'); // Get the toast element
+        if (toast) {
+            toast.style.display = 'block'; // Show the toast
+            setTimeout(() => {
+                toast.style.display = 'none'; // Hide the toast after 2 seconds
+            }, 2000);
         }
     }
     </script>
@@ -683,9 +634,13 @@
             </ul>
         </div>
     {% endif %}
+
+    <!-- Privacy statement to assure users about data safety -->
     <div class="privacy" style="margin: 24px auto 0 auto; max-width: 700px; background: rgba(39,255,100,0.13); color: #fff; border-radius: 10px; padding: 18px 24px; font-size: 1.08em; text-align: center; box-shadow: none; letter-spacing: 0.02em;">
         <b>Privacy Statement:</b> This tool does <u>not</u> store, save, or log any passwords you enter. All password analysis is performed in-memory and is never retained or shared. For your safety, do not use real or sensitive passwords.
     </div>
+
+    <!-- Footer with additional resources and credits -->
     <footer style="margin-top:40px; color:#fff; background:rgba(39,255,100,0.13); font-size:1.08em; border-radius:10px; box-shadow:none; padding:18px 24px; text-align:center; letter-spacing:0.02em;">
         <p style="margin:0; font-weight:bold; text-shadow:none;">
             Made for <b>Knowledge purposes only</b>.<br>

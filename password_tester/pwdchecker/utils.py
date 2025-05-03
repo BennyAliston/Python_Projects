@@ -1,3 +1,6 @@
+# This file contains utility functions for password analysis and validation.
+# These functions include entropy calculation, pattern detection, and integration with external services.
+
 import time
 import math
 import re
@@ -6,6 +9,7 @@ import pwnedpasswords
 import requests
 
 # Helper: entropy calculation
+# Calculates the entropy of a password based on its character set.
 def calculate_entropy(password):
     charset = 0
     if re.search(r'[a-z]', password):
@@ -22,6 +26,7 @@ def calculate_entropy(password):
     return round(entropy, 2)
 
 # Helper: keyboard patterns
+# Checks for common keyboard patterns in the password.
 KEYBOARD_PATTERNS = [
     '12345', 'qwerty', 'asdf', 'zxcv', 'password', 'letmein', 'admin', 'welcome', 'passw0rd', 'qazwsx', 'iloveyou'
 ]
@@ -31,6 +36,7 @@ def check_keyboard_patterns(password):
     return found
 
 # Helper: leet speak dictionary check
+# Converts leet speak to plain text and checks against a dictionary of common words.
 LEET_MAP = {'4':'a','@':'a','3':'e','1':'i','!':'i','0':'o','$':'s','5':'s','7':'t'}
 def leet_to_plain(password):
     pw = password.lower()
@@ -44,6 +50,7 @@ def check_leet_dictionary(password, common_words):
     return found
 
 # Helper: brute-force time estimate
+# Estimates the time required to brute-force the password based on its character set.
 def brute_force_time(password):
     charset = 0
     if re.search(r'[a-z]', password):
@@ -60,6 +67,7 @@ def brute_force_time(password):
     return seconds
 
 # Load common words for dictionary/leet checks
+# Loads a list of common passwords from a file for validation.
 import os
 COMMON_WORDS_PATH = os.path.join(os.path.dirname(__file__), 'pwdchecker', 'common_passwords.txt')
 try:
@@ -69,6 +77,7 @@ except Exception:
     COMMON_WORDS = set()
 
 def check_password_strength(password, deep=False, custom_dict=None):
+    # Analyzes the strength of a password using various metrics and checks.
     results = {
         'zxcvbn_result': None,
         'hibp_count': None,

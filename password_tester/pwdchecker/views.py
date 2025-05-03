@@ -4,9 +4,14 @@ from django.utils.crypto import get_random_string
 from django.core.files.uploadedfile import UploadedFile
 from .models import DisallowedWord
 
+# This file contains the views for the `pwdchecker` app.
+# Views handle HTTP requests and return responses, such as rendering templates or processing forms.
+
 # Create your views here.
 
 PASSWORD_POLICY = [
+    # Defines the password policy rules for validation.
+    # Each rule is a tuple containing a description and a validation function.
     ("At least 8 characters", lambda pw: len(pw) >= 8),
     ("At least 1 uppercase letter", lambda pw: any(c.isupper() for c in pw)),
     ("At least 1 lowercase letter", lambda pw: any(c.islower() for c in pw)),
@@ -16,6 +21,8 @@ PASSWORD_POLICY = [
 
 
 def index(request):
+    # Handles the main page of the `pwdchecker` app.
+    # Processes password analysis, custom dictionary management, and password generation.
     context = {}
     # Handle custom dictionary deletion
     if request.method == 'POST' and request.POST.get('delete_custom_dict'):
