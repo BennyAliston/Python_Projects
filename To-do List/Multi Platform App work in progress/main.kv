@@ -36,7 +36,7 @@
         text_size: self.width, None
         halign: 'left'
         valign: 'middle'
-        color: 0.3, 0.3, 0.3, 1
+        color: app.root.text_color if app and app.root else [0.3, 0.3, 0.3, 1]
         strikethrough: root.completed
 
     Label:
@@ -45,7 +45,7 @@
         text_size: self.width, None
         halign: 'center'
         valign: 'middle'
-        color: 0.3, 0.3, 0.3, 1
+        color: app.root.text_color if app and app.root else [0.3, 0.3, 0.3, 1]
 
     Label:
         text: root.priority_text
@@ -53,7 +53,7 @@
         text_size: self.width, None
         halign: 'center'
         valign: 'middle'
-        color: 0.3, 0.3, 0.3, 1
+        color: app.root.text_color if app and app.root else [0.3, 0.3, 0.3, 1]
 
     Button:
         text: 'Edit'
@@ -85,7 +85,7 @@
         Label:
             text: 'To-Do List Manager'
             font_size: '24sp'
-            color: 1, 1, 1, 1
+            color: app.root.label_color if app and app.root else [1, 1, 1, 1]
             bold: True
 
     # Input Area
@@ -100,6 +100,7 @@
             text: 'Task:'
             size_hint_x: None
             width: '100dp'
+            color: app.root.label_color if app and app.root else [0.3, 0.3, 0.3, 1]
 
         TextInput:
             id: task_input
@@ -110,6 +111,7 @@
             text: 'Deadline:'
             size_hint_x: None
             width: '100dp'
+            color: app.root.label_color if app and app.root else [0.3, 0.3, 0.3, 1]
 
         TextInput:
             id: deadline_input
@@ -120,6 +122,7 @@
             text: 'Priority:'
             size_hint_x: None
             width: '100dp'
+            color: app.root.label_color if app and app.root else [0.3, 0.3, 0.3, 1]
 
         BoxLayout:
             spacing: '10dp'
@@ -154,6 +157,7 @@
             text: 'Filter:'
             size_hint_x: None
             width: '50dp'
+            color: app.root.label_color if app and app.root else [0.3, 0.3, 0.3, 1]
 
         Spinner:
             id: filter_spinner
@@ -166,6 +170,7 @@
             text: 'Theme:'
             size_hint_x: None
             width: '50dp'
+            color: app.root.label_color if app and app.root else [0.3, 0.3, 0.3, 1]
 
         Spinner:
             id: theme_spinner
@@ -246,4 +251,4 @@
         size_hint_y: None
         height: '30dp'
         text: 'Total: 0 | Completed: 0 | Pending: 0 (0%)'
-        color: 0.3, 0.3, 0.3, 1
+        color: app.root.status_color if app and app.root else [0.3, 0.3, 0.3, 1]

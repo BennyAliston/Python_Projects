@@ -144,6 +144,10 @@ class TodoLayout(BoxLayout):
     current_filter = StringProperty('All')
     current_theme = StringProperty('Light')
 
+    text_color = ListProperty([0.3, 0.3, 0.3, 1])
+    label_color = ListProperty([0.3, 0.3, 0.3, 1])
+    status_color = ListProperty([0.3, 0.3, 0.3, 1])
+
     def __init__(self, **kwargs):
         super(TodoLayout, self).__init__(**kwargs)
         Clock.schedule_once(self._init_ui, 0)
@@ -176,8 +180,48 @@ class TodoLayout(BoxLayout):
 
     def apply_theme(self, theme):
         self.current_theme = theme
-        # Update theme-related properties here
+        self.set_theme_colors(theme)
         self.app.update_ui()
+
+    def set_theme_colors(self, theme):
+        # Define color palettes
+        if theme == 'Dark':
+            self.theme_colors = {
+                'background': [0.13, 0.15, 0.18, 1],
+                'header': [0.18, 0.22, 0.28, 1],
+                'text': [1, 1, 1, 1],
+                'label': [0.8, 0.8, 0.8, 1],
+                'status': [0.7, 0.7, 0.7, 1],
+                'task_bg': [0.18, 0.20, 0.23, 1],
+                'selected': [0.22, 0.28, 0.35, 1],
+            }
+        else:
+            self.theme_colors = {
+                'background': [0.95, 0.95, 0.95, 1],
+                'header': [0.2, 0.3, 0.4, 1],
+                'text': [0.3, 0.3, 0.3, 1],
+                'label': [0.3, 0.3, 0.3, 1],
+                'status': [0.3, 0.3, 0.3, 1],
+                'task_bg': [0.98, 0.98, 0.98, 1],
+                'selected': [0.9, 0.95, 1, 1],
+            }
+        # Update text colors for binding
+        self.text_color = self.theme_colors['text']
+        self.label_color = self.theme_colors['label']
+        self.status_color = self.theme_colors['status']
+        # Propagate theme to children
+        self.update_theme_widgets()
+
+    def update_theme_widgets(self):
+        # Update background color
+        if hasattr(self, 'canvas'):
+            for instr in self.canvas.before.children:
+                if hasattr(instr, 'rgba'):
+                    instr.rgba = self.theme_colors['background']
+        # Update header color
+        if hasattr(self.ids, 'status_bar'):
+            self.ids.status_bar.color = self.theme_colors['status']
+        # You can expand this to update more widgets as needed
 
     def search_tasks(self, search_text):
         # Update the task list based on search text
@@ -197,7 +241,9 @@ class TodoApp(App):
     def build(self):
         self.tasks_file = os.path.join(os.path.dirname(__file__), 'tasks.json')
         self.load_tasks()
-        return TodoLayout(app=self)
+        layout = TodoLayout(app=self)
+        layout.set_theme_colors(layout.current_theme)
+        return layout
 
     def update_ui(self, search_text=''):
         if not self.root:
