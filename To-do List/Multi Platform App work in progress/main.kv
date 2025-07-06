@@ -8,7 +8,7 @@
     spacing: '10dp'
     canvas.before:
         Color:
-            rgba: 0.98, 0.98, 0.98, 1 if not root.selected else (0.9, 0.95, 1, 1)
+            rgba: [0.98, 0.98, 0.98, 1] if not root.selected else [0.9, 0.95, 1, 1]
         Rectangle:
             pos: self.pos
             size: self.size

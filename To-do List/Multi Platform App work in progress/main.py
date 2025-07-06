@@ -15,6 +15,7 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.checkbox import CheckBox
 from kivy.uix.popup import Popup
 from kivy.uix.gridlayout import GridLayout
+from kivy.uix.widget import Widget
 from kivy.lang import Builder
 from kivy.clock import Clock
 from kivy.core.window import Window
@@ -58,10 +59,11 @@ class TaskItem(RecycleDataViewBehavior, BoxLayout):
         if self.app:
             self.app.toggle_task_complete(self.task_id)
 
-    def toggle_select(self):
-        if self.app:
-            self.selected = not self.selected
-            self.app.update_task(self.task_id, {'selected': self.selected})
+    def toggle_select(self, value=None):
+        if value is None:
+            value = not self.selected
+        if self.app and self.selected != value:
+            self.app.update_task(self.task_id, {'selected': value})
 
     def delete_task(self):
         if self.app:
@@ -75,13 +77,14 @@ class TaskItem(RecycleDataViewBehavior, BoxLayout):
         content.bind(minimum_height=content.setter('height'))
 
         # Task input
+
         content.add_widget(Label(text="Task:", size_hint_x=0.3))
-        task_input = TextInput(text=self.task_text, multiline=False, size_hint_y=None, height='40dp')
+        task_input = TextInput(text=self.task_text, multiline=False, size_hint_y=None, height=dp(40))
         content.add_widget(task_input)
 
         # Deadline input
         content.add_widget(Label(text="Deadline:", size_hint_x=0.3))
-        deadline_input = TextInput(text=self.deadline_text, multiline=False, size_hint_y=None, height='40dp')
+        deadline_input = TextInput(text=self.deadline_text, multiline=False, size_hint_y=None, height=dp(40))
         content.add_widget(deadline_input)
 
         # Priority input
@@ -90,17 +93,17 @@ class TaskItem(RecycleDataViewBehavior, BoxLayout):
             text=self.priority_text,
             values=('Low', 'Medium', 'High'),
             size_hint_y=None,
-            height='40dp'
+            height=dp(40)
         )
         content.add_widget(priority_spinner)
 
         # Error label
-        error_label = Label(text="", color=(1, 0, 0, 1), size_hint_y=None, height='40dp')
+        error_label = Label(text="", color=[1, 0, 0, 1], size_hint_y=None, height=dp(40))
         content.add_widget(error_label)
         content.add_widget(Widget())  # Empty widget for grid alignment
 
         # Buttons
-        button_layout = BoxLayout(size_hint_y=None, height='40dp', spacing=10)
+        button_layout = BoxLayout(size_hint_y=None, height=dp(40), spacing=10)
         save_button = Button(text="Save")
         cancel_button = Button(text="Cancel")
         button_layout.add_widget(save_button)
@@ -113,7 +116,7 @@ class TaskItem(RecycleDataViewBehavior, BoxLayout):
         popup = Popup(title="Edit Task",
                      content=content,
                      size_hint=(None, None),
-                     size=(400, 300))
+                     size=(dp(400), dp(300)))
 
         def save_action(instance):
             new_text = task_input.text.strip()
@@ -269,8 +272,8 @@ class TodoApp(App):
         except Exception as e:
             print(f"Error saving tasks: {e}")
             # Show error to user through status bar
-            if self.root and hasattr(self.root, 'status_bar'):
-                self.root.status_bar.text = f"Error saving tasks: {e}"
+            if self.root and 'status_bar' in self.root.ids:
+                self.root.ids.status_bar.text = f"Error saving tasks: {e}"
 
     def add_task(self, task_text, deadline_str, priority):
         new_task = {
